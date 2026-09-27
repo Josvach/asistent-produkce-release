@@ -20,7 +20,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  VROOM_TAG: v1.15.0
+  # VROOM 1.15+ používá std::format, jehož desetinná čísla má libc++ v macOS
+  # až od 13.3 — pro macOS 12 Monterey se nesestaví. 1.14.0 ho nepoužívá;
+  # 1.13.0 (C++17) je záloha.
+  VROOM_TAGS: v1.14.0 v1.13.0
   # Intel build zůstává na Electronu 43 — poslední řada, která běží na
   # macOS 12 Monterey (Electron 44+ vyžaduje macOS 13). NEZVYŠOVAT, dokud
   # má běžet na starých Intel MacBoocích.
@@ -52,33 +55,47 @@ jobs:
         uses: actions/cache@v4
         with:
           path: vroom-bin
-          key: vroom-${{ env.VROOM_TAG }}-macos12-arm64-x64
+          key: vroom-v1.14.0-v1.13.0-macos12-arm64-x64-v2
 
       - name: Sestavit VROOM
         if: steps.vroom-cache.outputs.cache-hit != 'true'
+        # Bez VROOM appka funguje (plánovač dopravy běží jako na webu) — jeho
+        # selhání tedy vydání nezastaví, jen se ohlásí.
+        continue-on-error: true
         run: |
           mkdir -p vroom-bin
           for arch in arm64 x86_64; do
-            rm -rf "/tmp/vroom-$arch"
-            git clone -q --depth 1 --branch "$VROOM_TAG" --recurse-submodules --shallow-submodules \
-              https://github.com/VROOM-Project/vroom "/tmp/vroom-$arch"
-            make -C "/tmp/vroom-$arch/src" -j"$(sysctl -n hw.ncpu)" USE_ROUTING=false \
-              CXX="clang++ -arch $arch -mmacosx-version-min=12.0"
             out=$([ "$arch" = "x86_64" ] && echo x64 || echo arm64)
-            cp "/tmp/vroom-$arch/bin/vroom" "vroom-bin/vroom-$out"
+            for tag in $VROOM_TAGS; do
+              rm -rf "/tmp/vroom-$arch"
+              git clone -q --depth 1 --branch "$tag" --recurse-submodules --shallow-submodules \
+                https://github.com/VROOM-Project/vroom "/tmp/vroom-$arch"
+              if make -C "/tmp/vroom-$arch/src" -j"$(sysctl -n hw.ncpu)" USE_ROUTING=false \
+                   CXX="clang++ -arch $arch -mmacosx-version-min=12.0" > "/tmp/vroom-$arch.log" 2>&1; then
+                cp "/tmp/vroom-$arch/bin/vroom" "vroom-bin/vroom-$out"
+                echo "VROOM $tag pro $out OK"
+                break
+              fi
+              echo "::warning::VROOM $tag pro $out se nesestavil"; tail -5 "/tmp/vroom-$arch.log"
+            done
           done
 
       - name: Ověřit VROOM
+        continue-on-error: true
         run: |
+          ls vroom-bin/vroom-* >/dev/null 2>&1 || { echo "::warning::Appka se vydá bez VROOM"; exit 0; }
           chmod +x vroom-bin/vroom-*
           file vroom-bin/*
+          otool -l vroom-bin/vroom-arm64 | grep -A3 LC_BUILD_VERSION | grep minos || true
           cat > /tmp/vroom-smoke.json <<'JSON'
           {"vehicles":[{"id":1,"start_index":0,"end_index":0,"capacity":[2]}],
-           "shipments":[{"amount":[1],"pickup":{"id":1,"location_index":1},"delivery":{"id":2,"location_index":0}}],
+           "jobs":[{"id":1,"location_index":1,"pickup":[1]}],
            "matrices":{"car":{"durations":[[0,300],[300,0]]}}}
           JSON
-          vroom-bin/vroom-arm64 -i /tmp/vroom-smoke.json | grep -q '"code":0'
-          mkdir -p app/build/bin && cp vroom-bin/vroom-* app/build/bin/
+          for b in vroom-bin/vroom-*; do
+            "$b" -i /tmp/vroom-smoke.json | grep -q '"code":0' || { echo "::warning::$b nefunguje"; rm -f "$b"; }
+          done
+          mkdir -p app/build/bin && cp vroom-bin/vroom-* app/build/bin/ 2>/dev/null || true
 
       # ── Appka ───────────────────────────────────────────────────────────
       - name: Sestavit .app / .dmg / .zip
@@ -86,6 +103,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
           npm i -g electron-builder@26.15.3
+          mkdir -p app/build/bin   # extraResources — i když se VROOM nepovedl
           cd app
           electron-builder --mac dmg zip --arm64 --publish never
           electron-builder --mac dmg zip --x64 --publish never -c.electronVersion="$ELECTRON_X64"
@@ -97,7 +115,7 @@ jobs:
             APP="app/dist/$d/Asistent Produkce.app"
             codesign --verify --deep --strict "$APP"
             plutil -p "$APP/Contents/Info.plist" | grep -E 'LSMinimumSystemVersion|CFBundleShortVersionString'
-            test -x "$APP/Contents/Resources/bin/vroom-arm64"
+            ls "$APP/Contents/Resources/bin/" 2>/dev/null || echo "bez VROOM"
           done
           # Intel build se na ARM runneru spustí přes Rosettu — ověří obě architektury.
           targets="mac-arm64"
