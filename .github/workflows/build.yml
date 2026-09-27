@@ -109,7 +109,7 @@ jobs:
           electron-builder --mac dmg zip --x64 --publish never -c.electronVersion="$ELECTRON_X64"
           ls -la dist
 
-      - name: Ověřit appku (lokální server z balíku naběhne)
+      - name: Ověřit appku (podpis, Info.plist, server v Apple Silicon buildu)
         run: |
           for d in mac-arm64 mac; do
             APP="app/dist/$d/Asistent Produkce.app"
@@ -117,31 +117,73 @@ jobs:
             plutil -p "$APP/Contents/Info.plist" | grep -E 'LSMinimumSystemVersion|CFBundleShortVersionString'
             ls "$APP/Contents/Resources/bin/" 2>/dev/null || echo "bez VROOM"
           done
-          # Intel build se na ARM runneru spustí přes Rosettu — ověří obě architektury.
-          targets="mac-arm64"
-          if arch -x86_64 /usr/bin/true 2>/dev/null; then targets="$targets mac"
-          else echo "::warning::Rosetta na runneru není — Intel build se nespouští, jen ověří podpis."; fi
-          for d in $targets; do
-            APP="app/dist/$d/Asistent Produkce.app"
-            BIN="$APP/Contents/MacOS/Asistent Produkce"
-            rm -rf /tmp/pbdata && mkdir -p /tmp/pbdata
-            ELECTRON_RUN_AS_NODE=1 LOCAL_MODE=1 PB_DATA_DIR=/tmp/pbdata PORT=3999 HOSTNAME=127.0.0.1 NODE_ENV=production \
-              "$BIN" "$APP/Contents/Resources/standalone/server.js" > /tmp/server-$d.log 2>&1 &
-            PID=$!
-            ok=0
-            for i in $(seq 1 60); do
-              code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3999/projects || true)
-              [ "$code" = "200" ] && { ok=1; break; }
-              sleep 1
-            done
-            curl -s http://127.0.0.1:3999/api/projects | head -c 200; echo
-            kill $PID || true
-            wait $PID 2>/dev/null || true
-            [ $ok = 1 ] || { echo "::error::Server v $d nenaběhl"; cat /tmp/server-$d.log; exit 1; }
-            echo "$d OK"
-          done
+          bash .github/smoke.sh "app/dist/mac-arm64/Asistent Produkce.app" 90
 
-      # ── Vydání ──────────────────────────────────────────────────────────
+      - name: Uložit buildy pro další kroky
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            app/dist/AsistentProdukce-*.dmg
+            app/dist/AsistentProdukce-*.zip
+            notes.txt
+          retention-days: 3
+          if-no-files-found: error
+
+  # Intel build se ověří na skutečném Intel Macu (na ARM runneru přes Rosettu
+  # se Electron spouští příliš pomalu a nespolehlivě).
+  intel:
+    needs: build
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+      - name: Ověřit Intel build (server a VROOM)
+        run: |
+          uname -m
+          sw_vers
+          ditto -x -k app/dist/AsistentProdukce-x64.zip /tmp/x64 2>/dev/null || ditto -x -k AsistentProdukce-x64.zip /tmp/x64
+          APP="/tmp/x64/Asistent Produkce.app"
+          codesign --verify --deep --strict "$APP"
+          lipo -archs "$APP/Contents/MacOS/Asistent Produkce"
+          if [ -x "$APP/Contents/Resources/bin/vroom-x64" ]; then
+            cat > /tmp/vroom-smoke.json <<'JSON'
+          {"vehicles":[{"id":1,"start_index":0,"end_index":0,"capacity":[2]}],
+           "jobs":[{"id":1,"location_index":1,"pickup":[1]}],
+           "matrices":{"car":{"durations":[[0,300],[300,0]]}}}
+          JSON
+            "$APP/Contents/Resources/bin/vroom-x64" -i /tmp/vroom-smoke.json | grep -q '"code":0'
+            echo "VROOM x64 OK"
+          fi
+          bash .github/smoke.sh "$APP" 180
+
+  release:
+    needs: [build, intel]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verze
+        run: |
+          V=$(node -p "require('./input/build.json').version")
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          # Artefakt drží cestu app/dist/… — srovnat do jedné složky.
+          find dist -type f \( -name '*.dmg' -o -name '*.zip' -o -name 'notes.txt' \) -exec mv {} dist/ \; 2>/dev/null || true
+          ls -la dist
+
       - name: Manifest aktualizace
         run: |
           node -e "
@@ -149,11 +191,11 @@ jobs:
             const files = {};
             for (const arch of ['arm64', 'x64']) {
               const name = 'AsistentProdukce-' + arch + '.zip';
-              const buf = fs.readFileSync('app/dist/' + name);
+              const buf = fs.readFileSync('dist/' + name);
               files[arch] = { name, sha256: crypto.createHash('sha256').update(buf).digest('hex'), size: buf.length };
             }
-            const m = { version: process.env.VERSION, date: new Date().toISOString(),
-              notes: fs.readFileSync('notes.txt', 'utf8').trim(), files };
+            const notes = fs.existsSync('dist/notes.txt') ? fs.readFileSync('dist/notes.txt', 'utf8').trim() : '';
+            const m = { version: process.env.VERSION, date: new Date().toISOString(), notes, files };
             fs.writeFileSync('latest.json', JSON.stringify(m, null, 2));
             console.log(m);
           "
@@ -176,18 +218,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          [ -s notes.txt ] || echo "Nová verze Asistenta produkce." > notes.txt
+          [ -s dist/notes.txt ] || echo "Nová verze Asistenta produkce." > dist/notes.txt
           gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --latest \
-            --title "Asistent produkce $VERSION" --notes-file notes.txt \
-            app/dist/AsistentProdukce-arm64.dmg app/dist/AsistentProdukce-x64.dmg \
-            app/dist/AsistentProdukce-arm64.zip app/dist/AsistentProdukce-x64.zip
+            --title "Asistent produkce $VERSION" --notes-file dist/notes.txt \
+            dist/AsistentProdukce-arm64.dmg dist/AsistentProdukce-x64.dmg \
+            dist/AsistentProdukce-arm64.zip dist/AsistentProdukce-x64.zip
 
       - name: latest.json do main, úklid build-input
         run: |
           git config --global user.name "asistent-produkce-release"
           git config --global user.email "actions@users.noreply.github.com"
           git fetch origin main
-          # Samostatný worktree — v pracovní složce jsou rozbalené buildy.
           git worktree add -B main /tmp/rel-main origin/main
           cp latest.json /tmp/rel-main/
           if [ -f latest.json.sig ]; then cp latest.json.sig /tmp/rel-main/
