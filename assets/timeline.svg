@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="806" viewBox="0 0 1280 806" font-family="'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">
+<rect width="1280" height="806" rx="28" fill="#111111"/>
+<text x="56" y="76" font-size="16" font-weight="700" fill="#97948d" text-anchor="start" letter-spacing="4">ČASOVÁ OSA</text>
+<text x="56" y="124" font-size="40" font-weight="900" fill="#fffdf8" text-anchor="start" letter-spacing="-1" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">Půl roku od první verze</text>
+<text x="56" y="158" font-size="18" font-weight="400" fill="#97948d" text-anchor="start">duben – září 2026</text>
+<line x1="56" y1="236" x2="1224" y2="236" stroke="#3a3936" stroke-width="2"/>
+<circle cx="64.0" cy="236" r="6" fill="#fffdf8"/>
+<text x="56.0" y="216" font-size="15" font-weight="800" fill="#fffdf8" text-anchor="start" letter-spacing="2">DUBEN</text>
+<rect x="56.0" y="254" width="84.19999999999999" height="28" rx="14" fill="#2a2927"/>
+<text x="68.0" y="273" font-size="14" font-weight="700" fill="#ff8b71" text-anchor="start">Doklady</text>
+<text x="56.0" y="312" font-size="13" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">12. 4.</text>
+<text x="56.0" y="330" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Vzniká aplikace:</text>
+<text x="56.0" y="350" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">rozpočet a doklady</text>
+<text x="56.0" y="386" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Účtenky čte AI z fotky</text>
+<text x="56.0" y="422" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Štáb nahrává doklady</text>
+<text x="56.0" y="442" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">přes odkaz</text>
+<text x="56.0" y="478" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Napojení na ARES a</text>
+<text x="56.0" y="498" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Pohodu</text>
+<circle cx="261.66666666666663" cy="236" r="6" fill="#fffdf8"/>
+<text x="253.66666666666666" y="216" font-size="15" font-weight="800" fill="#fffdf8" text-anchor="start" letter-spacing="2">KVĚTEN</text>
+<rect x="253.66666666666666" y="254" width="58.4" height="28" rx="14" fill="#2a2927"/>
+<text x="265.66666666666663" y="273" font-size="14" font-weight="700" fill="#ff8b71" text-anchor="start">Plán</text>
+<text x="253.66666666666666" y="312" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Stripboard a natáčecí</text>
+<text x="253.66666666666666" y="332" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">plán</text>
+<text x="253.66666666666666" y="368" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Export plánu jako z</text>
+<text x="253.66666666666666" y="388" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Movie Magic</text>
+<text x="253.66666666666666" y="424" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">DOOD, kalendář a iCal</text>
+<text x="253.66666666666666" y="460" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Účetnictví z Pohody</text>
+<text x="253.66666666666666" y="480" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">jedním importem</text>
+<circle cx="459.3333333333333" cy="236" r="6" fill="#fffdf8"/>
+<text x="451.3333333333333" y="216" font-size="15" font-weight="800" fill="#fffdf8" text-anchor="start" letter-spacing="2">ČERVEN</text>
+<rect x="451.3333333333333" y="254" width="92.8" height="28" rx="14" fill="#2a2927"/>
+<text x="463.3333333333333" y="273" font-size="14" font-weight="700" fill="#ff8b71" text-anchor="start">Natáčení</text>
+<text x="451.3333333333333" y="312" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Celé natáčecí dny jdou</text>
+<text x="451.3333333333333" y="332" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">přetáhnout</text>
+<text x="451.3333333333333" y="368" font-size="13" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">13. 6.</text>
+<text x="451.3333333333333" y="386" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Dispozice (call sheet) z</text>
+<text x="451.3333333333333" y="406" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">plánu</text>
+<text x="451.3333333333333" y="442" font-size="13" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">14. 6.</text>
+<text x="451.3333333333333" y="460" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Rozvoz štábu na plac na</text>
+<text x="451.3333333333333" y="480" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">mapě</text>
+<circle cx="657.0" cy="236" r="6" fill="#fffdf8"/>
+<text x="649.0" y="216" font-size="15" font-weight="800" fill="#fffdf8" text-anchor="start" letter-spacing="2">ČERVENEC</text>
+<rect x="649.0" y="254" width="135.8" height="28" rx="14" fill="#2a2927"/>
+<text x="661.0" y="273" font-size="14" font-weight="700" fill="#ff8b71" text-anchor="start">Finance a Mac</text>
+<text x="649.0" y="312" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">QR platby a hromadné</text>
+<text x="649.0" y="332" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">příkazy</text>
+<text x="649.0" y="368" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Verze rozpočtu a</text>
+<text x="649.0" y="388" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">pokladna</text>
+<text x="649.0" y="424" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Golden hour a hlídání</text>
+<text x="649.0" y="444" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">přesčasů</text>
+<text x="649.0" y="480" font-size="13" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">6. 7.</text>
+<text x="649.0" y="498" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Aplikace pro Mac, i</text>
+<text x="649.0" y="518" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">offline</text>
+<circle cx="854.6666666666666" cy="236" r="6" fill="#fffdf8"/>
+<text x="846.6666666666666" y="216" font-size="15" font-weight="800" fill="#fffdf8" text-anchor="start" letter-spacing="2">SRPEN</text>
+<rect x="846.6666666666666" y="254" width="92.8" height="28" rx="14" fill="#2a2927"/>
+<text x="858.6666666666666" y="273" font-size="14" font-weight="700" fill="#ff8b71" text-anchor="start">Tým a AI</text>
+<text x="846.6666666666666" y="312" font-size="13" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">12. 8.</text>
+<text x="846.6666666666666" y="330" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Projekt sdílí celý tým</text>
+<text x="846.6666666666666" y="366" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Chytřejší AI rozbor</text>
+<text x="846.6666666666666" y="386" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">scénáře</text>
+<text x="846.6666666666666" y="422" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Scénář dne v jednom PDF</text>
+<text x="846.6666666666666" y="458" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Dispozice e-mailem všem</text>
+<text x="846.6666666666666" y="478" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">naráz</text>
+<circle cx="1052.3333333333333" cy="236" r="8" fill="#ff5a36"/>
+<text x="1044.3333333333333" y="216" font-size="15" font-weight="800" fill="#fffdf8" text-anchor="start" letter-spacing="2">ZÁŘÍ</text>
+<rect x="1044.3333333333333" y="254" width="84.19999999999999" height="28" rx="14" fill="#ff5a36"/>
+<text x="1056.3333333333333" y="273" font-size="14" font-weight="700" fill="#111111" text-anchor="start">Verze 2</text>
+<text x="1044.3333333333333" y="312" font-size="13" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">1. 9.</text>
+<text x="1044.3333333333333" y="330" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Nové jméno: Asistent</text>
+<text x="1044.3333333333333" y="350" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">produkce</text>
+<text x="1044.3333333333333" y="386" font-size="13" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">12. 9.</text>
+<text x="1044.3333333333333" y="404" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Živá spolupráce, chat,</text>
+<text x="1044.3333333333333" y="424" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">role</text>
+<text x="1044.3333333333333" y="460" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">AI asistent a denní</text>
+<text x="1044.3333333333333" y="480" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">zálohy</text>
+<text x="1044.3333333333333" y="516" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Screenwriter a mobilní</text>
+<text x="1044.3333333333333" y="536" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">verze</text>
+<text x="1044.3333333333333" y="572" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">Mapy, tabule jízd, Denní</text>
+<text x="1044.3333333333333" y="592" font-size="15" font-weight="400" fill="#e7e4dd" text-anchor="start">zpráva</text>
+<line x1="56" y1="652" x2="1224" y2="652" stroke="#2c2b28"/>
+<text x="56.0" y="714" font-size="52" font-weight="900" fill="#fffdf8" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">6</text>
+<text x="56.0" y="748" font-size="16" font-weight="400" fill="#97948d" text-anchor="start">měsíců vývoje</text>
+<text x="348.0" y="714" font-size="52" font-weight="900" fill="#fffdf8" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">360+</text>
+<text x="348.0" y="748" font-size="16" font-weight="400" fill="#97948d" text-anchor="start">vylepšení</text>
+<text x="640.0" y="714" font-size="52" font-weight="900" fill="#fffdf8" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">12</text>
+<text x="640.0" y="748" font-size="16" font-weight="400" fill="#97948d" text-anchor="start">modulů v menu</text>
+<text x="932.0" y="714" font-size="52" font-weight="900" fill="#ff5a36" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">1</text>
+<text x="932.0" y="748" font-size="16" font-weight="400" fill="#97948d" text-anchor="start">systém místo pěti</text>
+</svg>

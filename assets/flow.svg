@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="344" viewBox="0 0 1280 344" font-family="'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">
+<rect width="1280" height="344" rx="28" fill="#f5f3ee"/>
+<text x="64" y="70" font-size="16" font-weight="700" fill="#6f6d68" text-anchor="start" letter-spacing="4">JAK TO FUNGUJE</text>
+<text x="64" y="112" font-size="32" font-weight="800" fill="#111111" text-anchor="start">Jeden scénář. Celá produkce.</text>
+<rect x="64.0" y="146" width="201.6" height="162" rx="16" fill="#ffffff" stroke="#e4e0d6"/>
+<text x="84.0" y="184" font-size="15" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">01</text>
+<text x="84.0" y="216" font-size="21" font-weight="900" fill="#111111" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">SCÉNÁŘ</text>
+<text x="84.0" y="246" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">Nahraješ PDF, AI</text>
+<text x="84.0" y="266" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">vytáhne obrazy,</text>
+<text x="84.0" y="286" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">postavy a lokace.</text>
+<path d="M271.6 220 h22 m-7 -7 l7 7 l-7 7" fill="none" stroke="#ff5a36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="301.6" y="146" width="201.6" height="162" rx="16" fill="#ffffff" stroke="#e4e0d6"/>
+<text x="321.6" y="184" font-size="15" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">02</text>
+<text x="321.6" y="216" font-size="21" font-weight="900" fill="#111111" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">PLÁN</text>
+<text x="321.6" y="246" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">Obrazy přetáhneš</text>
+<text x="321.6" y="266" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">do natáčecích dnů.</text>
+<path d="M509.20000000000005 220 h22 m-7 -7 l7 7 l-7 7" fill="none" stroke="#ff5a36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="539.2" y="146" width="201.6" height="162" rx="16" fill="#111111" stroke="#e4e0d6"/>
+<text x="559.2" y="184" font-size="15" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">03</text>
+<text x="559.2" y="216" font-size="21" font-weight="900" fill="#fffdf8" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">DISPOZICE</text>
+<text x="559.2" y="246" font-size="15" font-weight="400" fill="#bdbab3" text-anchor="start">Call sheet na každý</text>
+<text x="559.2" y="266" font-size="15" font-weight="400" fill="#bdbab3" text-anchor="start">den se vyplní sám.</text>
+<path d="M746.8000000000001 220 h22 m-7 -7 l7 7 l-7 7" fill="none" stroke="#ff5a36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="776.8" y="146" width="201.6" height="162" rx="16" fill="#ffffff" stroke="#e4e0d6"/>
+<text x="796.8" y="184" font-size="15" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">04</text>
+<text x="796.8" y="216" font-size="21" font-weight="900" fill="#111111" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">DOPRAVA</text>
+<text x="796.8" y="246" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">Rozvoz štábu na plac</text>
+<text x="796.8" y="266" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">spočítaný na mapě.</text>
+<path d="M984.4 220 h22 m-7 -7 l7 7 l-7 7" fill="none" stroke="#ff5a36" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="1014.4" y="146" width="201.6" height="162" rx="16" fill="#ffffff" stroke="#e4e0d6"/>
+<text x="1034.4" y="184" font-size="15" font-weight="800" fill="#ff5a36" text-anchor="start" letter-spacing="1">05</text>
+<text x="1034.4" y="216" font-size="21" font-weight="900" fill="#111111" text-anchor="start" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, 'Liberation Sans', sans-serif">ROZPOČET</text>
+<text x="1034.4" y="246" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">Faktury a čerpání</text>
+<text x="1034.4" y="266" font-size="15" font-weight="400" fill="#6f6d68" text-anchor="start">vidíš živě.</text>
+</svg>
