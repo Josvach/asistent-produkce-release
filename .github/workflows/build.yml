@@ -1,0 +1,183 @@
+# Sestaví DMG desktopové appky a vydá je jako release.
+#
+# Spouští se pushem do větve `build-input` (dělá to vydávací workflow v soukromém
+# repu nebo ručně). Ta obsahuje input/app.tar.gz — už ZKOMPILOVANOU appku
+# (Electron obal + Next standalone server), žádný zdrojový kód — a input/build.json
+# s číslem verze. Tady se jen přidá nativní VROOM, zabalí se .app/.dmg pro
+# Apple Silicon i Intel, vydá release a do main se zapíše latest.json pro
+# automatické aktualizace. Větev build-input se nakonec smaže.
+name: Sestavit desktop
+
+on:
+  push:
+    branches: [build-input]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-desktop
+  cancel-in-progress: false
+
+env:
+  VROOM_TAG: v1.15.0
+  # Intel build zůstává na Electronu 43 — poslední řada, která běží na
+  # macOS 12 Monterey (Electron 44+ vyžaduje macOS 13). NEZVYŠOVAT, dokud
+  # má běžet na starých Intel MacBoocích.
+  ELECTRON_X64: 43.1.0
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Rozbalit vstup
+        run: |
+          tar -xzf input/app.tar.gz
+          V=$(node -p "require('./input/build.json').version")
+          echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::Neplatná verze $V"; exit 1; }
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+          node -p "require('./input/build.json').notes || ''" > notes.txt
+          echo "Verze $V"
+
+      # ── VROOM (nativní solver tras) ─────────────────────────────────────
+      - name: Cache VROOM
+        id: vroom-cache
+        uses: actions/cache@v4
+        with:
+          path: vroom-bin
+          key: vroom-${{ env.VROOM_TAG }}-macos12-arm64-x64
+
+      - name: Sestavit VROOM
+        if: steps.vroom-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p vroom-bin
+          for arch in arm64 x86_64; do
+            rm -rf "/tmp/vroom-$arch"
+            git clone -q --depth 1 --branch "$VROOM_TAG" --recurse-submodules --shallow-submodules \
+              https://github.com/VROOM-Project/vroom "/tmp/vroom-$arch"
+            make -C "/tmp/vroom-$arch/src" -j"$(sysctl -n hw.ncpu)" USE_ROUTING=false \
+              CXX="clang++ -arch $arch -mmacosx-version-min=12.0"
+            out=$([ "$arch" = "x86_64" ] && echo x64 || echo arm64)
+            cp "/tmp/vroom-$arch/bin/vroom" "vroom-bin/vroom-$out"
+          done
+
+      - name: Ověřit VROOM
+        run: |
+          chmod +x vroom-bin/vroom-*
+          file vroom-bin/*
+          cat > /tmp/vroom-smoke.json <<'JSON'
+          {"vehicles":[{"id":1,"start_index":0,"end_index":0,"capacity":[2]}],
+           "shipments":[{"amount":[1],"pickup":{"id":1,"location_index":1},"delivery":{"id":2,"location_index":0}}],
+           "matrices":{"car":{"durations":[[0,300],[300,0]]}}}
+          JSON
+          vroom-bin/vroom-arm64 -i /tmp/vroom-smoke.json | grep -q '"code":0'
+          mkdir -p app/build/bin && cp vroom-bin/vroom-* app/build/bin/
+
+      # ── Appka ───────────────────────────────────────────────────────────
+      - name: Sestavit .app / .dmg / .zip
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: |
+          npm i -g electron-builder@26.15.3
+          cd app
+          electron-builder --mac dmg zip --arm64 --publish never
+          electron-builder --mac dmg zip --x64 --publish never -c.electronVersion="$ELECTRON_X64"
+          ls -la dist
+
+      - name: Ověřit appku (lokální server z balíku naběhne)
+        run: |
+          for d in mac-arm64 mac; do
+            APP="app/dist/$d/Asistent Produkce.app"
+            codesign --verify --deep --strict "$APP"
+            plutil -p "$APP/Contents/Info.plist" | grep -E 'LSMinimumSystemVersion|CFBundleShortVersionString'
+            test -x "$APP/Contents/Resources/bin/vroom-arm64"
+          done
+          # Intel build se na ARM runneru spustí přes Rosettu — ověří obě architektury.
+          targets="mac-arm64"
+          if arch -x86_64 /usr/bin/true 2>/dev/null; then targets="$targets mac"
+          else echo "::warning::Rosetta na runneru není — Intel build se nespouští, jen ověří podpis."; fi
+          for d in $targets; do
+            APP="app/dist/$d/Asistent Produkce.app"
+            BIN="$APP/Contents/MacOS/Asistent Produkce"
+            rm -rf /tmp/pbdata && mkdir -p /tmp/pbdata
+            ELECTRON_RUN_AS_NODE=1 LOCAL_MODE=1 PB_DATA_DIR=/tmp/pbdata PORT=3999 HOSTNAME=127.0.0.1 NODE_ENV=production \
+              "$BIN" "$APP/Contents/Resources/standalone/server.js" > /tmp/server-$d.log 2>&1 &
+            PID=$!
+            ok=0
+            for i in $(seq 1 60); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3999/projects || true)
+              [ "$code" = "200" ] && { ok=1; break; }
+              sleep 1
+            done
+            curl -s http://127.0.0.1:3999/api/projects | head -c 200; echo
+            kill $PID || true
+            wait $PID 2>/dev/null || true
+            [ $ok = 1 ] || { echo "::error::Server v $d nenaběhl"; cat /tmp/server-$d.log; exit 1; }
+            echo "$d OK"
+          done
+
+      # ── Vydání ──────────────────────────────────────────────────────────
+      - name: Manifest aktualizace
+        run: |
+          node -e "
+            const fs = require('fs'), crypto = require('crypto');
+            const files = {};
+            for (const arch of ['arm64', 'x64']) {
+              const name = 'AsistentProdukce-' + arch + '.zip';
+              const buf = fs.readFileSync('app/dist/' + name);
+              files[arch] = { name, sha256: crypto.createHash('sha256').update(buf).digest('hex'), size: buf.length };
+            }
+            const m = { version: process.env.VERSION, date: new Date().toISOString(),
+              notes: fs.readFileSync('notes.txt', 'utf8').trim(), files };
+            fs.writeFileSync('latest.json', JSON.stringify(m, null, 2));
+            console.log(m);
+          "
+
+      - name: Podpis manifestu
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          if [ -z "$UPDATE_SIGNING_KEY" ]; then
+            echo "::warning::Chybí secret UPDATE_SIGNING_KEY — latest.json je bez podpisu, appky ho nepřijmou, dokud se nepodepíše."
+            exit 0
+          fi
+          node -e "
+            const fs = require('fs'), crypto = require('crypto');
+            const sig = crypto.sign(null, fs.readFileSync('latest.json'), crypto.createPrivateKey(process.env.UPDATE_SIGNING_KEY));
+            fs.writeFileSync('latest.json.sig', sig.toString('base64'));
+          "
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -s notes.txt ] || echo "Nová verze Asistenta produkce." > notes.txt
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --latest \
+            --title "Asistent produkce $VERSION" --notes-file notes.txt \
+            app/dist/AsistentProdukce-arm64.dmg app/dist/AsistentProdukce-x64.dmg \
+            app/dist/AsistentProdukce-arm64.zip app/dist/AsistentProdukce-x64.zip
+
+      - name: latest.json do main, úklid build-input
+        run: |
+          git config --global user.name "asistent-produkce-release"
+          git config --global user.email "actions@users.noreply.github.com"
+          git fetch origin main
+          # Samostatný worktree — v pracovní složce jsou rozbalené buildy.
+          git worktree add -B main /tmp/rel-main origin/main
+          cp latest.json /tmp/rel-main/
+          if [ -f latest.json.sig ]; then cp latest.json.sig /tmp/rel-main/
+          else rm -f /tmp/rel-main/latest.json.sig; fi  # starý podpis k novému manifestu nepatří
+          cd /tmp/rel-main
+          git add -A latest.json
+          git add -A latest.json.sig 2>/dev/null || true
+          git commit -m "Vydání $VERSION" || echo "beze změny"
+          git push origin main
+          cd "$GITHUB_WORKSPACE"
+          git push origin --delete build-input
