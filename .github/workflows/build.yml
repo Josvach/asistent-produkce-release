@@ -44,6 +44,8 @@ jobs:
 
       - name: Rozbalit vstup
         run: |
+          # Balík nad 100 MB přijde po kusech (GitHub větší soubor nepřijme).
+          [ -f input/app.tar.gz ] || cat input/app.tar.gz.part-* > input/app.tar.gz
           tar -xzf input/app.tar.gz
           V=$(node -p "require('./input/build.json').version")
           echo "$V" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "::error::Neplatná verze $V"; exit 1; }
