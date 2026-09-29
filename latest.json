@@ -1,23 +1,23 @@
 {
-  "version": "1.20260929.3",
-  "date": "2026-09-29T15:57:45.968Z",
-  "notes": "• Aktualizace aplikace jsou nově malé (~14 MB) a nainstalují se samy rychlým restartem — bez stahování celé aplikace a bez reinstalace.\n• Když by nová verze nenaběhla, aplikace se sama vrátí k předchozí fungující.",
+  "version": "1.20260929.4",
+  "date": "2026-09-29T16:15:17.283Z",
+  "notes": "• Doprava: plánovač rozvozu v aplikaci počítá stejně jako webová verze — stejné rozdělení aut a časů.",
   "files": {
     "arm64": {
       "name": "AsistentProdukce-arm64.zip",
-      "sha256": "25e3f1017825730e8d99cb5c3370d3701ffaabac2f6e3db0b32f3476e013870f",
-      "size": 136228139
+      "sha256": "6f59666653ae0e5013ad7d5a5cbb33d7e31785f33a7311f0ea09827762d5d256",
+      "size": 136225167
     },
     "x64": {
       "name": "AsistentProdukce-x64.zip",
-      "sha256": "5adf9a040be0100dc7c68ac3918e662beac7ccc399a1230e1cd9cf1f2507c9df",
-      "size": 140985927
+      "sha256": "bdb7cf1a67823d31dc15807bf8438b58419b612bbf95a98e7e16c525a2cc4f41",
+      "size": 140982973
     }
   },
   "payload": {
     "name": "AsistentProdukce-payload.tar.gz",
-    "sha256": "f8e817ef83f5a9030b90159732fb48a1ce6e804bc4c53baa5a88c3784034ebe1",
-    "size": 14116713,
+    "sha256": "7a68491f5fad41606034234150e7faa89f3db878862735e30fca9ac3d8c8db0e",
+    "size": 14114584,
     "shellApi": 1,
     "electron": "43.1.0"
   }
