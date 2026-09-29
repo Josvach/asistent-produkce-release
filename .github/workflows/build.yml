@@ -229,7 +229,14 @@ jobs:
           MANDATORY=$(node -p "require('./input/build.json').mandatory === true")
           if [ "$MANDATORY" != "true" ]; then echo "Aktualizace není vynucená."; exit 0; fi
           if [ -z "$UPDATE_SIGNING_KEY" ]; then
-            echo "::error::Vynucená aktualizace potřebuje secret UPDATE_SIGNING_KEY"; exit 1
+            # Bez klíče se vydá i tak: policy.json se zapíše nepodepsaný a appky ho
+            # ignorují, dokud k němu někdo nepřidá podpis (scripts/sign-file.mjs).
+            node -e "
+              const p = { minVersion: process.env.VERSION, disabled: false, message: '', issuedAt: Date.now() };
+              require('fs').writeFileSync('policy.json', JSON.stringify(p, null, 2) + '\n');
+            "
+            echo "::warning::Chybí secret UPDATE_SIGNING_KEY — policy.json je bez podpisu, vynucení začne platit až po podpisu."
+            exit 0
           fi
           node -e "
             const fs = require('fs'), crypto = require('crypto');
@@ -260,11 +267,16 @@ jobs:
           cp latest.json /tmp/rel-main/
           if [ -f latest.json.sig ]; then cp latest.json.sig /tmp/rel-main/
           else rm -f /tmp/rel-main/latest.json.sig; fi  # starý podpis k novému manifestu nepatří
-          if [ -f policy.json ]; then cp policy.json policy.json.sig /tmp/rel-main/; fi
+          if [ -f policy.json ]; then
+            cp policy.json /tmp/rel-main/
+            if [ -f policy.json.sig ]; then cp policy.json.sig /tmp/rel-main/
+            else rm -f /tmp/rel-main/policy.json.sig; fi
+          fi
           cd /tmp/rel-main
           git add -A latest.json
           git add -A latest.json.sig 2>/dev/null || true
-          git add -A policy.json policy.json.sig 2>/dev/null || true
+          git add -A policy.json 2>/dev/null || true
+          git add -A policy.json.sig 2>/dev/null || true
           git commit -m "Vydání $VERSION" || echo "beze změny"
           git push origin main
           cd "$GITHUB_WORKSPACE"
