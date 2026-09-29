@@ -1,17 +1,24 @@
 {
-  "version": "1.20260929.2",
-  "date": "2026-09-29T15:16:56.338Z",
-  "notes": "• Zálohy obsahují celý projekt: kromě rozpočtu, faktur, paragonů, scénáře a plánu i dispozice, Štáb (kontakty a auta), verze plánu a rozpočtu a komentáře k dokladům. Obnova „Ze zá…\n• Obnova ze zálohy převezme i fakturační údaje a jméno produkce. Když se nepovede, nevznikne napůl prázdný projekt.\n• Desktopová aplikace: kliknutí na online projekt ho rovnou otevře — už se neukazuje druhý seznam jen s online projekty. Přehled má stručné nadpisy Sólo a Online, vysvětlení se uk…",
+  "version": "1.20260929.3",
+  "date": "2026-09-29T15:57:45.968Z",
+  "notes": "• Aktualizace aplikace jsou nově malé (~14 MB) a nainstalují se samy rychlým restartem — bez stahování celé aplikace a bez reinstalace.\n• Když by nová verze nenaběhla, aplikace se sama vrátí k předchozí fungující.",
   "files": {
     "arm64": {
       "name": "AsistentProdukce-arm64.zip",
-      "sha256": "7d369851e11c7cdff4d9153f07450304d24a7b9b7c49f63fb64cefa6b3ce4fa9",
-      "size": 136222865
+      "sha256": "25e3f1017825730e8d99cb5c3370d3701ffaabac2f6e3db0b32f3476e013870f",
+      "size": 136228139
     },
     "x64": {
       "name": "AsistentProdukce-x64.zip",
-      "sha256": "e8b4c1aa8a5f05507330453f9c77f612da710291c03a4ecb76407ca62f6a9990",
-      "size": 140980677
+      "sha256": "5adf9a040be0100dc7c68ac3918e662beac7ccc399a1230e1cd9cf1f2507c9df",
+      "size": 140985927
     }
+  },
+  "payload": {
+    "name": "AsistentProdukce-payload.tar.gz",
+    "sha256": "f8e817ef83f5a9030b90159732fb48a1ce6e804bc4c53baa5a88c3784034ebe1",
+    "size": 14116713,
+    "shellApi": 1,
+    "electron": "43.1.0"
   }
 }
