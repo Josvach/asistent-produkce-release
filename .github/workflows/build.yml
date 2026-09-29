@@ -5,7 +5,9 @@
 # (Electron obal + Next standalone server), žádný zdrojový kód — a input/build.json
 # s číslem verze. Tady se jen přidá nativní VROOM, zabalí se .app/.dmg pro
 # Apple Silicon i Intel, vydá release a do main se zapíše latest.json pro
-# automatické aktualizace. Větev build-input se nakonec smaže.
+# automatické aktualizace. Když build.json nese `mandatory: true`, zapíše se
+# i podepsaný policy.json — starší verze se zablokují a samy aktualizují.
+# Větev build-input se nakonec smaže.
 name: Sestavit desktop
 
 on:
@@ -214,6 +216,29 @@ jobs:
             fs.writeFileSync('latest.json.sig', sig.toString('base64'));
           "
 
+      # Vynucená aktualizace (build.json → mandatory): minimální verze = tahle.
+      # Starší appky se po načtení policy.json zablokují a samy se aktualizují.
+      # Zapisuje se až s latest.json, tedy po nahrání releasu — zablokovaná
+      # appka si tak má vždycky odkud novou verzi stáhnout.
+      - name: Politika (vynucená aktualizace)
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          MANDATORY=$(node -p "require('./input/build.json').mandatory === true")
+          if [ "$MANDATORY" != "true" ]; then echo "Aktualizace není vynucená."; exit 0; fi
+          if [ -z "$UPDATE_SIGNING_KEY" ]; then
+            echo "::error::Vynucená aktualizace potřebuje secret UPDATE_SIGNING_KEY"; exit 1
+          fi
+          node -e "
+            const fs = require('fs'), crypto = require('crypto');
+            const p = { minVersion: process.env.VERSION, disabled: false, message: '', issuedAt: Date.now() };
+            const body = JSON.stringify(p, null, 2) + '\n';
+            fs.writeFileSync('policy.json', body);
+            const sig = crypto.sign(null, Buffer.from(body), crypto.createPrivateKey(process.env.UPDATE_SIGNING_KEY));
+            fs.writeFileSync('policy.json.sig', sig.toString('base64'));
+            console.log(p);
+          "
+
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -233,9 +258,11 @@ jobs:
           cp latest.json /tmp/rel-main/
           if [ -f latest.json.sig ]; then cp latest.json.sig /tmp/rel-main/
           else rm -f /tmp/rel-main/latest.json.sig; fi  # starý podpis k novému manifestu nepatří
+          if [ -f policy.json ]; then cp policy.json policy.json.sig /tmp/rel-main/; fi
           cd /tmp/rel-main
           git add -A latest.json
           git add -A latest.json.sig 2>/dev/null || true
+          git add -A policy.json policy.json.sig 2>/dev/null || true
           git commit -m "Vydání $VERSION" || echo "beze změny"
           git push origin main
           cd "$GITHUB_WORKSPACE"
