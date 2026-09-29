@@ -1,17 +1,17 @@
 {
-  "version": "1.20260927.1",
-  "date": "2026-09-27T23:00:48.773Z",
-  "notes": "• Nový panel Štáb v menu vlevo místo Kontaktů. Je v něm soupiska projektu a skupiny štábu (dřív v dispozicích) a u každého člověka jde vyplnit všechno: jméno, profese, telefon s p…\n• Dispozice: záložka Štáb projektu se jmenuje Hlavička — jsou v ní kontakty do hlavičky a fakturační údaje produkce. Kontakty platí pro všechny dny, přetahují se za ⠿ a nové pořad…\n• Dispozice: sekce Kontakty (override pro den) zmizela — hlavička se bere z projektu.",
+  "version": "1.20260929.2",
+  "date": "2026-09-29T15:16:56.338Z",
+  "notes": "• Zálohy obsahují celý projekt: kromě rozpočtu, faktur, paragonů, scénáře a plánu i dispozice, Štáb (kontakty a auta), verze plánu a rozpočtu a komentáře k dokladům. Obnova „Ze zá…\n• Obnova ze zálohy převezme i fakturační údaje a jméno produkce. Když se nepovede, nevznikne napůl prázdný projekt.\n• Desktopová aplikace: kliknutí na online projekt ho rovnou otevře — už se neukazuje druhý seznam jen s online projekty. Přehled má stručné nadpisy Sólo a Online, vysvětlení se uk…",
   "files": {
     "arm64": {
       "name": "AsistentProdukce-arm64.zip",
-      "sha256": "d3fc7c326066d75a3a6e668d5d5ae353c7c54a996cebef931a2d40a1eee95c66",
-      "size": 135765826
+      "sha256": "7d369851e11c7cdff4d9153f07450304d24a7b9b7c49f63fb64cefa6b3ce4fa9",
+      "size": 136222865
     },
     "x64": {
       "name": "AsistentProdukce-x64.zip",
-      "sha256": "a16015895de14e0980efcddc117f62d76910232aa9f731119b9daf71d7384295",
-      "size": 140523625
+      "sha256": "e8b4c1aa8a5f05507330453f9c77f612da710291c03a4ecb76407ca62f6a9990",
+      "size": 140980677
     }
   }
 }
