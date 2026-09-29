@@ -1,4 +1,16 @@
-# Sestaví DMG desktopové appky a vydá je jako release.
+# Vydá novou verzi desktopové appky — malou (jen obsah) nebo velkou (DMG).
+#
+# MALÁ aktualizace (build.json → full: false, obal se nezměnil): jen se zabalí
+# obsah (AsistentProdukce-payload.tar.gz, ~14 MB), ověří se, že z něj naběhne
+# server, a vydá se release s payloadem. macOS ani Intel joby neběží. Release
+# není „latest", takže odkazy …/releases/latest/download/*.dmg dál vedou na
+# poslední DMG (stažená appka se po startu sama dotáhne na nejnovější obsah).
+# latest.json si ponechá `files` (zipy celé appky) z posledního velkého vydání;
+# zipy se do releasu i zkopírují, aby se měly odkud aktualizovat i starší appky
+# bez bootstrapu (skládají adresu z čísla verze).
+#
+# VELKÁ aktualizace (full: true, jiná verze VROOM, nebo zatím žádné velké
+# vydání s otiskem obalu): celé DMG pro Apple Silicon i Intel jako dřív.
 #
 # Spouští se pushem do větve `build-input` (dělá to vydávací workflow v soukromém
 # repu nebo ručně). Ta obsahuje input/app.tar.gz — už ZKOMPILOVANOU appku
@@ -32,7 +44,37 @@ env:
   ELECTRON_X64: 43.1.0
 
 jobs:
+  # Rozhodnutí malá × velká. Velká, když ji chce soukromé repo (změna obalu /
+  # vynucené DMG), když se tady změnila verze VROOM, nebo když poslední vydání
+  # nemá záznam o obalu.
+  prep:
+    runs-on: ubuntu-latest
+    outputs:
+      full: ${{ steps.decide.outputs.full }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: decide
+        run: |
+          git show origin/main:latest.json > /tmp/prev.json 2>/dev/null || echo '{}' > /tmp/prev.json
+          FULL=$(node -e "
+            const b = require('./input/build.json'), prev = require('/tmp/prev.json');
+            const why = [];
+            if (b.full !== false) why.push('build.json chce velkou aktualizaci');
+            if (!b.shellApi) why.push('build bez bootstrapu');
+            if (!prev.shell || !prev.shell.fingerprint) why.push('poslední vydání nemá záznam o obalu');
+            else if (prev.shell.vroom !== process.env.VROOM_TAGS) why.push('jiná verze VROOM');
+            else if (b.shellFingerprint && prev.shell.fingerprint !== b.shellFingerprint) why.push('jiný otisk obalu');
+            console.error(why.length ? 'VELKÁ: ' + why.join(', ') : 'MALÁ: obal beze změny');
+            process.stdout.write(why.length ? 'true' : 'false');
+          ")
+          echo "full=$FULL" >> "$GITHUB_OUTPUT"
+          echo "### $([ "$FULL" = true ] && echo 'Velká aktualizace (DMG)' || echo 'Malá aktualizace (jen obsah)')" >> "$GITHUB_STEP_SUMMARY"
+
   build:
+    needs: prep
+    if: needs.prep.outputs.full == 'true'
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -137,7 +179,8 @@ jobs:
   # Intel build se ověří na skutečném Intel Macu (na ARM runneru přes Rosettu
   # se Electron spouští příliš pomalu a nespolehlivě).
   intel:
-    needs: build
+    needs: [prep, build]
+    if: needs.prep.outputs.full == 'true'
     runs-on: macos-15-intel
     timeout-minutes: 20
     steps:
@@ -165,14 +208,21 @@ jobs:
           bash .github/smoke.sh "$APP" 180
 
   release:
-    needs: [build, intel]
+    needs: [prep, build, intel]
+    # Malá aktualizace: build a intel se přeskočí, release jede i tak.
+    if: >-
+      always() && needs.prep.result == 'success' &&
+      (needs.prep.outputs.full != 'true' || (needs.build.result == 'success' && needs.intel.result == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      FULL: ${{ needs.prep.outputs.full }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
+        if: env.FULL == 'true'
         with:
           name: dist
           path: dist
@@ -184,9 +234,32 @@ jobs:
         run: |
           V=$(node -p "require('./input/build.json').version")
           echo "VERSION=$V" >> "$GITHUB_ENV"
+          mkdir -p dist
           # Artefakt drží cestu app/dist/… — srovnat do jedné složky.
           find dist -type f \( -name '*.dmg' -o -name '*.zip' -o -name 'notes.txt' \) -exec mv {} dist/ \; 2>/dev/null || true
+          [ -s dist/notes.txt ] || node -p "require('./input/build.json').notes || ''" > dist/notes.txt
+          git show origin/main:latest.json > /tmp/prev.json 2>/dev/null || echo '{}' > /tmp/prev.json
           ls -la dist
+
+      # Malá aktualizace: zipy celé appky z posledního velkého vydání se
+      # zkopírují i do tohohle releasu. Starší appky (bez bootstrapu) skládají
+      # adresu zipu z čísla verze v latest.json — bez kopie by skončily na 404.
+      - name: Zipy z posledního velkého vydání
+        if: env.FULL != 'true'
+        run: |
+          node -e "
+            const prev = require('/tmp/prev.json');
+            for (const arch of ['arm64', 'x64']) {
+              const f = prev.files && prev.files[arch];
+              if (!f) { console.error('Chybí files.' + arch + ' v posledním latest.json'); process.exit(1); }
+              const url = f.url || ('https://github.com/' + process.env.GITHUB_REPOSITORY + '/releases/download/v' + prev.version + '/' + f.name);
+              console.log(arch + ' ' + url + ' ' + f.sha256);
+            }
+          " > /tmp/zips.txt
+          while read -r arch url sha; do
+            curl -fsSL -o "dist/AsistentProdukce-$arch.zip" "$url"
+            echo "$sha  dist/AsistentProdukce-$arch.zip" | sha256sum -c -
+          done < /tmp/zips.txt
 
       # Malá aktualizace: jen „obsah" appky (logika desktopu + Next server,
       # ~14 MB) — appka s bootstrapem (build.json → shellApi) ho stáhne místo
@@ -195,6 +268,7 @@ jobs:
       - name: Obsah pro malé aktualizace
         run: |
           if [ "$(node -p "require('./input/build.json').shellApi || ''")" = "" ]; then
+            [ "$FULL" = "true" ] || { echo "::error::Malá aktualizace bez obsahu (build bez bootstrapu)"; exit 1; }
             echo "Build bez bootstrapu — jen velká aktualizace."; exit 0
           fi
           [ -f input/app.tar.gz ] || cat input/app.tar.gz.part-* > input/app.tar.gz
@@ -222,17 +296,35 @@ jobs:
         run: |
           node -e "
             const fs = require('fs'), crypto = require('crypto');
-            const files = {};
-            for (const arch of ['arm64', 'x64']) {
-              const name = 'AsistentProdukce-' + arch + '.zip';
-              const buf = fs.readFileSync('dist/' + name);
-              files[arch] = { name, sha256: crypto.createHash('sha256').update(buf).digest('hex'), size: buf.length };
+            const b = JSON.parse(fs.readFileSync('input/build.json', 'utf8'));
+            const prev = JSON.parse(fs.readFileSync('/tmp/prev.json', 'utf8'));
+            const full = process.env.FULL === 'true';
+            const repo = process.env.GITHUB_REPOSITORY;
+            let files, shell;
+            if (full) {
+              files = {};
+              for (const arch of ['arm64', 'x64']) {
+                const name = 'AsistentProdukce-' + arch + '.zip';
+                const buf = fs.readFileSync('dist/' + name);
+                files[arch] = {
+                  name, sha256: crypto.createHash('sha256').update(buf).digest('hex'), size: buf.length,
+                  url: 'https://github.com/' + repo + '/releases/download/v' + process.env.VERSION + '/' + name,
+                };
+              }
+              shell = { version: process.env.VERSION, fingerprint: b.shellFingerprint || null, vroom: process.env.VROOM_TAGS, electron: b.electron || null };
+            } else {
+              // Malá aktualizace: celá appka zůstává z posledního velkého vydání.
+              files = {};
+              for (const arch of ['arm64', 'x64']) {
+                const f = prev.files[arch];
+                files[arch] = { ...f, url: f.url || ('https://github.com/' + repo + '/releases/download/v' + prev.version + '/' + f.name) };
+              }
+              shell = prev.shell;
             }
             const notes = fs.existsSync('dist/notes.txt') ? fs.readFileSync('dist/notes.txt', 'utf8').trim() : '';
-            const m = { version: process.env.VERSION, date: new Date().toISOString(), notes, files };
+            const m = { version: process.env.VERSION, date: new Date().toISOString(), notes, kind: full ? 'full' : 'payload', commit: b.commit || null, shell, files };
             // Malá aktualizace (jen obsah) — starší appky tohle pole ignorují a jdou přes files.
             if (fs.existsSync('dist/AsistentProdukce-payload.tar.gz')) {
-              const b = JSON.parse(fs.readFileSync('input/build.json', 'utf8'));
               const buf = fs.readFileSync('dist/AsistentProdukce-payload.tar.gz');
               m.payload = {
                 name: 'AsistentProdukce-payload.tar.gz',
@@ -295,11 +387,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           [ -s dist/notes.txt ] || echo "Nová verze Asistenta produkce." > dist/notes.txt
-          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --latest \
-            --title "Asistent produkce $VERSION" --notes-file dist/notes.txt \
-            dist/AsistentProdukce-arm64.dmg dist/AsistentProdukce-x64.dmg \
-            dist/AsistentProdukce-arm64.zip dist/AsistentProdukce-x64.zip \
-            $(ls dist/AsistentProdukce-payload.tar.gz 2>/dev/null)
+          if [ "$FULL" = "true" ]; then
+            gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --latest \
+              --title "Asistent produkce $VERSION" --notes-file dist/notes.txt \
+              dist/AsistentProdukce-arm64.dmg dist/AsistentProdukce-x64.dmg \
+              dist/AsistentProdukce-arm64.zip dist/AsistentProdukce-x64.zip \
+              $(ls dist/AsistentProdukce-payload.tar.gz 2>/dev/null)
+          else
+            # Není „latest": …/releases/latest/download/*.dmg dál vede na poslední DMG.
+            printf '\n\n_Malá aktualizace — nainstalovaná aplikace ji stáhne sama. Instalačka (DMG) je u posledního velkého vydání: https://github.com/%s/releases/latest_\n' "$GITHUB_REPOSITORY" >> dist/notes.txt
+            gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --latest=false \
+              --title "Asistent produkce $VERSION (malá aktualizace)" --notes-file dist/notes.txt \
+              dist/AsistentProdukce-payload.tar.gz \
+              dist/AsistentProdukce-arm64.zip dist/AsistentProdukce-x64.zip
+          fi
 
       - name: latest.json do main, úklid build-input
         run: |
