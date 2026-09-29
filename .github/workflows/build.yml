@@ -188,6 +188,36 @@ jobs:
           find dist -type f \( -name '*.dmg' -o -name '*.zip' -o -name 'notes.txt' \) -exec mv {} dist/ \; 2>/dev/null || true
           ls -la dist
 
+      # Malá aktualizace: jen „obsah" appky (logika desktopu + Next server,
+      # ~14 MB) — appka s bootstrapem (build.json → shellApi) ho stáhne místo
+      # celého .app a přepne se rychlým restartem. Na architektuře nezáleží
+      # (žádné nativní moduly), takže je jeden pro Apple Silicon i Intel.
+      - name: Obsah pro malé aktualizace
+        run: |
+          if [ "$(node -p "require('./input/build.json').shellApi || ''")" = "" ]; then
+            echo "Build bez bootstrapu — jen velká aktualizace."; exit 0
+          fi
+          [ -f input/app.tar.gz ] || cat input/app.tar.gz.part-* > input/app.tar.gz
+          mkdir -p /tmp/in && tar -xzf input/app.tar.gz -C /tmp/in
+          test -f /tmp/in/app/electron/main.cjs && test -f /tmp/in/app/.next/standalone/server.js
+          if find /tmp/in/app/.next/standalone -name '*.node' | grep -q .; then
+            echo "::error::Obsah má nativní moduly — nejde sdílet mezi architekturami"; exit 1
+          fi
+          # GNU tar bez vlastníků/xattrs — rozbalí se čistě i macOS tarem.
+          tar --owner=0 --group=0 --numeric-owner -czf dist/AsistentProdukce-payload.tar.gz -C /tmp/in/app electron .next/standalone
+          ls -la dist/AsistentProdukce-payload.tar.gz
+          # Server z obsahu musí naběhnout (stejně jako ho spustí appka).
+          mkdir -p /tmp/p /tmp/pdata && tar -xzf dist/AsistentProdukce-payload.tar.gz -C /tmp/p
+          (cd /tmp/p/.next/standalone && LOCAL_MODE=1 PB_DATA_DIR=/tmp/pdata PORT=3999 HOSTNAME=127.0.0.1 NODE_ENV=production node server.js > /tmp/payload-server.log 2>&1 &)
+          ok=0
+          for i in $(seq 1 60); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3999/projects || true)" = "200" ] && { ok=1; break; }
+            sleep 1
+          done
+          pkill -f "node server.js" || true
+          [ $ok = 1 ] || { echo "::error::Server z obsahu nenaběhl"; cat /tmp/payload-server.log; exit 1; }
+          echo "Obsah OK"
+
       - name: Manifest aktualizace
         run: |
           node -e "
@@ -200,6 +230,18 @@ jobs:
             }
             const notes = fs.existsSync('dist/notes.txt') ? fs.readFileSync('dist/notes.txt', 'utf8').trim() : '';
             const m = { version: process.env.VERSION, date: new Date().toISOString(), notes, files };
+            // Malá aktualizace (jen obsah) — starší appky tohle pole ignorují a jdou přes files.
+            if (fs.existsSync('dist/AsistentProdukce-payload.tar.gz')) {
+              const b = JSON.parse(fs.readFileSync('input/build.json', 'utf8'));
+              const buf = fs.readFileSync('dist/AsistentProdukce-payload.tar.gz');
+              m.payload = {
+                name: 'AsistentProdukce-payload.tar.gz',
+                sha256: crypto.createHash('sha256').update(buf).digest('hex'),
+                size: buf.length,
+                shellApi: b.shellApi,
+                electron: b.electron || null,
+              };
+            }
             fs.writeFileSync('latest.json', JSON.stringify(m, null, 2));
             console.log(m);
           "
@@ -256,7 +298,8 @@ jobs:
           gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --latest \
             --title "Asistent produkce $VERSION" --notes-file dist/notes.txt \
             dist/AsistentProdukce-arm64.dmg dist/AsistentProdukce-x64.dmg \
-            dist/AsistentProdukce-arm64.zip dist/AsistentProdukce-x64.zip
+            dist/AsistentProdukce-arm64.zip dist/AsistentProdukce-x64.zip \
+            $(ls dist/AsistentProdukce-payload.tar.gz 2>/dev/null)
 
       - name: latest.json do main, úklid build-input
         run: |
